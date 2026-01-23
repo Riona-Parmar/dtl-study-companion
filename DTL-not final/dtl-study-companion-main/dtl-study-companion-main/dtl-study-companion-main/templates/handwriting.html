@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="container mt-4">
+
+<h3>✍ Handwriting Generator</h3>
+
+<form action="/generate_handwriting" method="POST" enctype="multipart/form-data">
+
+<div class="mb-3">
+<label>Upload Your Handwriting Sample (Image)</label>
+<input type="file" name="sample" class="form-control" required>
+</div>
+
+<div class="mb-3">
+<label>Enter Text</label>
+<textarea name="text" rows="6" class="form-control" required></textarea>
+</div>
+
+<button type="submit" class="btn btn-primary">
+Generate Handwritten PDF
+</button>
+
+</form>
+
+</div>
+
+{% endblock %}

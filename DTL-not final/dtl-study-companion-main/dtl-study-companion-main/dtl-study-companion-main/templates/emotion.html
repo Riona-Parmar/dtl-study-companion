@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="emotion-page">
+
+    <h2 class="page-title">🧠 Emotion Analysis</h2>
+
+    <div class="emotion-card">
+
+        <div class="emotion-icon">
+            😊
+        </div>
+
+        <h3 class="emotion-text">
+            Current Emotional State
+        </h3>
+
+        <p class="emotion-value">
+            {{ emotion if emotion else "Neutral" }}
+        </p>
+
+        <p class="emotion-description">
+            This emotion is calculated based on your focus,
+            consistency, and study behavior.
+        </p>
+
+    </div>
+
+</div>
+
+<style>
+/* ===== Emotion Page Styling ===== */
+
+.emotion-page {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    text-align: center;
+}
+
+.page-title {
+    font-size: 28px;
+    font-weight: 600;
+    margin-bottom: 30px;
+    color: #ffffff;
+}
+
+.emotion-card {
+    background: #ffffff;
+    padding: 40px 50px;
+    border-radius: 20px;
+    width: 380px;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.25);
+}
+
+.emotion-icon {
+    font-size: 60px;
+    margin-bottom: 15px;
+}
+
+.emotion-text {
+    font-size: 20px;
+    color: #555;
+    margin-bottom: 10px;
+}
+
+.emotion-value {
+    font-size: 26px;
+    font-weight: 700;
+    color: #1e88e5;
+    margin-bottom: 15px;
+}
+
+.emotion-description {
+    font-size: 14px;
+    color: #777;
+}
+</style>
+
+{% endblock %}

@@ -1,0 +1,352 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+.card {
+    border-radius: 12px;
+}
+
+textarea, input, select {
+    border-radius: 10px;
+}
+
+.btn {
+    border-radius: 20px;
+}
+
+body {
+    background: linear-gradient(120deg, #f0f4ff, #fdfefe);
+}
+</style>
+
+<div class="container mt-4">
+
+<div class="row">
+
+<!-- LEFT PANEL -->
+<div class="col-md-7">
+
+<div class="card shadow-sm mb-4">
+
+<div class="card-header bg-primary text-white">
+Save New Concept
+</div>
+
+<div class="card-body">
+
+<form action="/save_note" method="POST">
+
+<input type="text"
+       name="topic"
+       class="form-control mb-2"
+       placeholder="Topic Name"
+       required>
+
+<input type="file"
+       id="fileUpload"
+       class="form-control mb-2"
+       accept=".txt,.pdf"
+       onchange="uploadFile()">
+
+<select id="chunkSelect"
+        class="form-control mb-2 d-none"
+        onchange="loadChunk()">
+</select>
+
+<textarea name="content"
+          id="note-content"
+          class="form-control mb-2"
+          rows="7"
+          placeholder="Paste or load content here...">
+</textarea>
+
+
+
+</form>
+
+</div>
+</div>
+
+</div>
+
+<!-- RIGHT PANEL -->
+<div class="col-md-5">
+
+<div class="card shadow-sm border-info mb-4">
+<div class="card-body">
+
+<h5 class="text-info">AI Study Assistant</h5>
+
+<button class="btn btn-outline-info mb-2 w-100"
+        onclick="simplifyText()">
+Simplify
+</button>
+
+<button class="btn btn-outline-secondary mb-2 w-100"
+        onclick="readAloud()">
+Read Aloud
+</button>
+
+<button class="btn btn-outline-warning mb-2 w-100"
+        onclick="saveHighlight(); return false;">
+
+⭐ Save Highlight
+</button>
+<button class="btn btn-outline-danger mb-2 w-100"
+        onclick="openYoutube()">
+📺 Find Related Videos
+</button>
+
+
+</div>
+</div>
+
+</div>
+
+</div>
+
+<hr>
+
+<h4>📒 My Saved Notes & Highlights</h4>
+
+<button onclick="exportNotes()"
+        class="btn btn-outline-success mb-3">
+📥 Export Notes as PDF & Clear
+</button>
+
+
+<div class="row" id="saved-notes-row">
+
+{% for note in notes %}
+
+<div class="col-md-6">
+
+<div class="card shadow-sm mb-3">
+<div class="card-body">
+
+<p>{{ note["content"] }}</p>
+
+</div>
+</div>
+
+</div>
+
+{% endfor %}
+
+</div>
+
+</div>
+
+
+<script>
+
+let fileChunks = [];
+
+// ---------------- FILE UPLOAD ----------------
+
+function uploadFile() {
+
+    const file = document.getElementById("fileUpload").files[0];
+
+    if (!file) {
+        alert("Select file first");
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    fetch("/upload_file", {
+        method: "POST",
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+
+        fileChunks = data.chunks;
+
+        const dropdown =
+            document.getElementById("chunkSelect");
+
+        dropdown.innerHTML = "";
+        dropdown.classList.remove("d-none");
+
+        fileChunks.forEach((chunk, i) => {
+
+            const opt = document.createElement("option");
+            opt.value = i;
+            opt.text = "Section " + (i + 1);
+
+            dropdown.appendChild(opt);
+        });
+
+        // Load first chunk
+        document.getElementById("note-content").value =
+            fileChunks[0];
+    });
+}
+
+function openYoutube() {
+
+    const topicInput =
+        document.querySelector('input[name="topic"]');
+
+    let topic = topicInput.value;
+
+    if (!topic) {
+        alert("Enter topic name first!");
+        return;
+    }
+
+    const query =
+        encodeURIComponent(topic + " explanation tutorial");
+
+    const url =
+        "https://www.youtube.com/results?search_query=" + query;
+
+    window.open(url, "_blank");
+}
+
+
+// ---------------- LOAD CHUNK ----------------
+
+function loadChunk() {
+
+    const index =
+        document.getElementById("chunkSelect").value;
+
+    document.getElementById("note-content").value =
+        fileChunks[index];
+}
+
+
+// ---------------- READ ALOUD ----------------
+
+function readAloud() {
+
+    const text =
+        document.getElementById("note-content").value;
+
+    if (!text) {
+        alert("No content to read");
+        return;
+    }
+
+    const speech =
+        new SpeechSynthesisUtterance(text);
+
+    window.speechSynthesis.speak(speech);
+}
+
+
+// ---------------- SIMPLIFY ----------------
+
+function simplifyText() {
+
+    const box =
+        document.getElementById("note-content");
+
+    if (!box.value) {
+        alert("Enter content first");
+        return;
+    }
+
+    let sentences = box.value.split(".");
+    box.value =
+        sentences.slice(0, 2).join(".") + ".";
+}
+
+
+// ---------------- SAVE HIGHLIGHT (NO RELOAD) ----------------
+
+function saveHighlight() {
+
+    const textarea =
+        document.getElementById("note-content");
+
+    const selectedText =
+        textarea.value.substring(
+            textarea.selectionStart,
+            textarea.selectionEnd
+        );
+
+    if (!selectedText) {
+        alert("Highlight some text first");
+        return;
+    }
+
+    let source = "Manual Notes";
+
+    const fileInput =
+        document.getElementById("fileUpload");
+
+    if (fileInput.files.length > 0) {
+        source = fileInput.files[0].name;
+    }
+
+    fetch("/save_highlight", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            highlight: selectedText,
+            source: source
+        })
+    })
+    .then(res => res.json())
+    .then(() => {
+
+        // Add highlight card LIVE (no reload)
+        addHighlightCard(selectedText);
+
+        alert("Highlight Saved!");
+    });
+}
+
+
+// ---------------- LIVE UI APPEND ----------------
+
+function addHighlightCard(text) {
+
+    const row =
+        document.getElementById("saved-notes-row");
+
+    const col = document.createElement("div");
+    col.className = "col-md-6";
+
+    col.innerHTML = `
+        <div class="card shadow-sm mb-3">
+            <div class="card-body">
+                <p>${text}</p>
+            </div>
+        </div>
+    `;
+
+    row.prepend(col);
+}
+function exportNotes() {
+
+    const iframe = document.createElement("iframe");
+    iframe.style.display = "none";
+    iframe.src = "/export_notes";
+
+    document.body.appendChild(iframe);
+
+    // Clear UI highlights after download trigger
+    setTimeout(() => {
+
+        const notesRow =
+            document.getElementById("saved-notes-row");
+
+        notesRow.innerHTML = "";
+
+    }, 1000);
+}
+
+
+
+
+</script>
+
+{% endblock %}

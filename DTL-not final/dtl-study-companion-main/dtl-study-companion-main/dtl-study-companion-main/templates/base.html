@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>DTL Study Companion</title>
+
+    <!-- Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <!-- Main Theme CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+
+<div class="app-container">
+
+    <!-- ================= SIDEBAR ================= -->
+    {% if show_layout %}
+    <aside class="sidebar">
+        <h2 class="logo">DTL</h2>
+
+        <nav class="nav-links">
+            <a href="{{ url_for('dashboard') }}">📊 Dashboard</a>
+            <a href="{{ url_for('emotion') }}">🧠 Emotion</a>
+            <a href="{{ url_for('digital_twin') }}">👤 Digital Twin</a>
+            <a href="{{ url_for('timer') }}">⏱ Focus Timer</a>
+            <a href="{{ url_for('notes_page') }}">📒 Notes</a>
+            <a href="{{ url_for('handwriting') }}">✍ Handwriting</a>
+            <a href="{{ url_for('chat_page') }}">🤖 AI Companion</a>
+
+            <a href="#" class="text-danger" onclick="openLogoutModal(event)">🚪 Logout</a>
+        </nav>
+    </aside>
+    {% endif %}
+
+    <!-- ================= MAIN CONTENT ================= -->
+    <main class="main-content">
+
+        {% if show_layout %}
+        <header class="topbar">
+            <span class="title">Emotion-Adaptive Study Companion</span>
+            <button onclick="toggleTheme()" class="theme-btn">🌙</button>
+        </header>
+        {% endif %}
+
+        <section class="content-area">
+            {% block content %}{% endblock %}
+        </section>
+
+    </main>
+
+</div>
+
+<!-- ================= LOGOUT MODAL ================= -->
+<div id="logoutModal" class="logout-modal-overlay">
+    <div class="logout-modal">
+        <h3>Confirm Logout</h3>
+        <p>Are you sure you want to log out of your account?</p>
+
+        <div class="logout-actions">
+            <button class="btn-cancel" onclick="closeLogoutModal()">Cancel</button>
+            <button class="btn-logout" onclick="confirmLogout()">Logout</button>
+        </div>
+    </div>
+</div>
+
+<!-- ================= GLOBAL SCRIPTS ================= -->
+<script>
+/* -------- LOGOUT MODAL -------- */
+function openLogoutModal(event) {
+    event.preventDefault();
+    document.getElementById("logoutModal").style.display = "flex";
+}
+
+function closeLogoutModal() {
+    document.getElementById("logoutModal").style.display = "none";
+}
+
+function confirmLogout() {
+    // Clear timer storage
+    localStorage.removeItem("timerRunning");
+    localStorage.removeItem("timerStartTime");
+    localStorage.removeItem("timerStoppedSeconds");
+
+    window.location.href = "/logout";
+}
+
+/* Close modal on outside click */
+document.getElementById("logoutModal").addEventListener("click", function (e) {
+    if (e.target === this) {
+        closeLogoutModal();
+    }
+});
+
+/* Close modal on ESC */
+document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") {
+        closeLogoutModal();
+    }
+});
+</script>
+
+<!-- Theme Toggle -->
+<script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+
+</body>
+</html>

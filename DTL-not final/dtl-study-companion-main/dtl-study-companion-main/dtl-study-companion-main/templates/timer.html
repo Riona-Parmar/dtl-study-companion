@@ -1,0 +1,245 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+    /* ===== Timer Layout ===== */
+    .timer-wrapper {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 70vh;
+    }
+
+    /* ===== Timer Card ===== */
+    .timer-card {
+        width: 380px;
+        padding: 42px 36px;
+        border-radius: 26px;
+        background: rgba(255, 255, 255, 0.08);
+        backdrop-filter: blur(18px);
+        box-shadow:
+            0 0 0 1px rgba(255, 255, 255, 0.08),
+            0 30px 80px rgba(0, 0, 0, 0.65);
+        text-align: center;
+        color: #e5e7eb;
+    }
+
+    /* ===== Title ===== */
+    .timer-title {
+        font-size: 20px;
+        font-weight: 600;
+        letter-spacing: 0.3px;
+        color: #c7d2fe;
+        margin-bottom: 18px;
+    }
+
+    /* ===== Time Display ===== */
+    #timerDisplay {
+        font-size: 72px;
+        font-weight: 800;
+        letter-spacing: 2px;
+        margin: 24px 0 30px;
+        color: #f8fafc;
+        text-shadow: 0 0 20px rgba(99, 102, 241, 0.45);
+    }
+
+    /* ===== Buttons ===== */
+    .timer-buttons {
+        display: flex;
+        justify-content: center;
+        gap: 14px;
+        margin-bottom: 18px;
+    }
+
+    .timer-buttons button {
+        min-width: 120px;
+        padding: 14px 0;
+        border-radius: 999px;
+        border: none;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .timer-buttons button:hover {
+        transform: translateY(-1px);
+    }
+
+    /* Start */
+    .start-btn {
+        background: linear-gradient(135deg, #22c55e, #16a34a);
+        color: white;
+        box-shadow: 0 10px 25px rgba(34, 197, 94, 0.35);
+    }
+
+    /* Stop */
+    .stop-btn {
+        background: linear-gradient(135deg, #ef4444, #dc2626);
+        color: white;
+        box-shadow: 0 10px 25px rgba(239, 68, 68, 0.35);
+    }
+
+    /* Reset */
+    .reset-btn {
+        margin-top: 6px;
+        background: transparent;
+        border: none;
+        color: #9ca3af;
+        font-size: 14px;
+        cursor: pointer;
+    }
+
+    .reset-btn:hover {
+        color: #e5e7eb;
+        text-decoration: underline;
+    }
+
+    /* Hint */
+    .timer-hint {
+        margin-top: 18px;
+        font-size: 13px;
+        color: #9ca3af;
+    }
+</style>
+
+<div class="timer-wrapper">
+    <div class="timer-card">
+        <div class="timer-title">⏱ Focus Session</div>
+        <select id="dt_subject" class="form-control" onchange="handleSubjectChange()">
+            <option value="">Select</option>
+            <option>DSA</option>
+            <option>Math</option>
+            <option>Physics</option>
+            <option>OS</option>
+            <option>ML</option>
+            <option value="Other">Other</option>
+        </select>
+
+        <input type="text" id="custom_subject" class="form-control mt-2" placeholder="Enter subject name"
+            style="display:none;">
+
+
+
+        <div id="timerDisplay">00:00</div>
+
+        <div class="timer-buttons">
+            <button class="start-btn" onclick="startTimer()">Start</button>
+            <button class="stop-btn" onclick="stopTimer()">Stop</button>
+        </div>
+
+        <button class="reset-btn" onclick="resetTimer()">Reset</button>
+
+        <div class="timer-hint">
+            The timer keeps running even when you switch pages.
+        </div>
+    </div>
+</div>
+
+<script>
+    let timerInterval = null;
+
+    function handleSubjectChange() {
+        const subjectSelect = document.getElementById("dt_subject");
+        const customInput = document.getElementById("custom_subject");
+
+        if (subjectSelect.value === "Other") {
+            customInput.style.display = "block";
+        } else {
+            customInput.style.display = "none";
+            customInput.value = "";
+        }
+    }
+
+    /* ===== Helpers ===== */
+    function formatTime(seconds) {
+        const m = String(Math.floor(seconds / 60)).padStart(2, "0");
+        const s = String(seconds % 60).padStart(2, "0");
+        return `${m}:${s}`;
+    }
+
+    function getElapsedSeconds() {
+        const isRunning = localStorage.getItem("timerRunning") === "true";
+        const startTime = localStorage.getItem("timerStartTime");
+        const stoppedSeconds = localStorage.getItem("timerStoppedSeconds");
+
+        if (isRunning && startTime) {
+            return Math.floor((Date.now() - parseInt(startTime)) / 1000);
+        }
+
+        return stoppedSeconds ? parseInt(stoppedSeconds) : 0;
+    }
+
+    /* ===== Display ===== */
+    function updateDisplay() {
+        const seconds = getElapsedSeconds();
+        document.getElementById("timerDisplay").textContent = formatTime(seconds);
+    }
+
+    /* ===== Controls ===== */
+    function startTimer() {
+        if (localStorage.getItem("timerRunning") === "true") return;
+
+        const existingSeconds = getElapsedSeconds();
+        localStorage.setItem(
+            "timerStartTime",
+            Date.now() - existingSeconds * 1000
+        );
+        localStorage.setItem("timerRunning", "true");
+
+        timerInterval = setInterval(updateDisplay, 1000);
+    }
+
+    function stopTimer() {
+        if (localStorage.getItem("timerRunning") !== "true") return;
+
+        const elapsed = getElapsedSeconds();
+
+        // Stop timer
+        localStorage.setItem("timerStoppedSeconds", elapsed);
+        localStorage.setItem("timerRunning", "false");
+        clearInterval(timerInterval);
+
+        // 🔥 SAVE SESSION FOR BEHAVIORAL TWIN
+        const sessionData = {
+            subject: localStorage.getItem("timer_subject"),
+            mood: localStorage.getItem("dt_mood"),
+            plannedHours: localStorage.getItem("dt_hours"),
+            actualSeconds: elapsed,
+            date: new Date().toLocaleDateString()
+        };
+
+        localStorage.setItem("last_session", JSON.stringify(sessionData));
+
+        console.log("Saved Behavioral Session:", sessionData);
+    }
+
+
+
+    function resetTimer() {
+        localStorage.removeItem("timerStartTime");
+        localStorage.removeItem("timerStoppedSeconds");
+        localStorage.setItem("timerRunning", "false");
+
+        clearInterval(timerInterval);
+        updateDisplay();
+    }
+
+    /* ===== Auto Resume ===== */
+    document.addEventListener("DOMContentLoaded", () => {
+        updateDisplay();
+
+        if (localStorage.getItem("timerRunning") === "true") {
+            timerInterval = setInterval(updateDisplay, 1000);
+        }
+    });
+
+    document.addEventListener("DOMContentLoaded", () => {
+        const savedSubject = localStorage.getItem("timer_subject");
+        if (savedSubject) {
+            document.getElementById("subject").value = savedSubject;
+        }
+    });
+</script>
+
+{% endblock %}

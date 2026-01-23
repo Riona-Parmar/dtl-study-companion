@@ -1,0 +1,255 @@
+{% extends "base.html" %}
+{% block content %}
+<link rel="stylesheet"
+    href="dtl-study-companion-main\dtl-study-companion-main\dtl-study-companion-main\static\css\style.css">
+<h2 class="mb-4">👤 Digital Twin Analysis</h2>
+
+<!-- ================= TAB BUTTONS ================= -->
+<div class="mb-4">
+    <button class="btn btn-primary" onclick="showPerformance()">Performance Twin</button>
+    <button class="btn btn-outline-primary ms-2" onclick="showBehavioral()">Behavioral (Peak) Twin</button>
+</div>
+
+<!-- ================= PERFORMANCE TWIN ================= -->
+<div id="performance_section">
+
+    <div class="card p-4 shadow-sm">
+        <h5 class="mb-3">📊 Digital Twin Planning</h5>
+
+        <div class="row g-3">
+
+            <!-- Subject -->
+            <div class="col-md-4">
+                <label class="form-label">Subject</label>
+                <select id="dt_subject" class="form-control" onchange="handleSubjectChange()">
+                    <option value="">Select</option>
+                    <option>DSA</option>
+                    <option>Math</option>
+                    <option>Physics</option>
+                    <option>OS</option>
+                    <option>ML</option>
+                    <option value="Other">Other</option>
+                </select>
+                <input id="custom_subject" class="form-control mt-2" placeholder="Enter subject" style="display:none;">
+            </div>
+
+            <!-- Planned Hours -->
+            <div class="col-md-4">
+                <label class="form-label">Planned Study Hours</label>
+                <input type="number" step="0.1" id="dt_hours" class="form-control">
+            </div>
+
+            <!-- Mood -->
+            <div class="col-md-4">
+                <label class="form-label">Current Mood</label>
+                <select id="dt_mood" class="form-control">
+                    <option value="">Select</option>
+                    <option>Focused</option>
+                    <option>Motivated</option>
+                    <option>Tired</option>
+                    <option>Stressed</option>
+                </select>
+            </div>
+
+            <!-- Actual Time -->
+            <div class="col-md-6 mt-3">
+                <label class="form-label">Actual Studied Time</label>
+                <input id="dt_actual" class="form-control" disabled>
+            </div>
+
+            <!-- Buttons -->
+            <div class="col-12 mt-3">
+                <button class="btn btn-success" onclick="startStudyPopup()">▶ Start Study</button>
+                <button class="btn btn-primary ms-2" onclick="compareDigitalTwin()">📊 Compare</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- RESULT -->
+    <div id="dt_result" class="card mt-4 p-4 shadow-sm" style="display:none;">
+        <h5>📈 Digital Twin Comparison</h5>
+        <p><b>Subject:</b> <span id="r_subject"></span></p>
+        <p><b>Mood:</b> <span id="r_mood"></span></p>
+        <p><b>Planned Time:</b> <span id="r_planned"></span></p>
+        <p><b>Actual Time:</b> <span id="r_actual"></span></p>
+
+        <!-- Progress -->
+        <div class="mt-3">
+            Progress: <span id="progress_percent">0%</span>
+            <div style="height:12px;background:#e5e7eb;border-radius:999px;">
+                <div id="dt_progress_fill" style="height:100%;width:0%;border-radius:999px;"></div>
+            </div>
+        </div>
+
+        <p class="mt-3"><b>Status:</b> <span id="r_status"></span></p>
+        <div class="alert alert-info mt-2">
+            💡 <span id="r_suggestion"></span>
+        </div>
+    </div>
+</div>
+
+<!-- ================= BEHAVIORAL TWIN ================= -->
+<div id="behavioral_section" style="display:none;">
+    <div class="card p-4 shadow-sm">
+        <h5>🧠 Behavioral Twin (Automatic Session Analysis)</h5>
+        <p class="text-muted">
+            This graph is generated automatically after each study session.
+        </p>
+
+        <div class="card p-4 shadow-sm mt-3">
+            <h5 class="mb-2">📈 Behavioral Twin – Session Insight</h5>
+
+            <p class="text-muted small" id="bt_meta"></p>
+
+            <div class="bt-chart-wrapper">
+                <canvas id="behaviorChart"></canvas>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+
+<!-- ================= POPUP ================= -->
+<div id="studyPopup" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;
+display:flex;align-items:center;justify-content:center;">
+    <div style="background:white;padding:25px;border-radius:16px;width:360px;text-align:center;">
+        <h4>📘 Ready to Study?</h4>
+        <p id="popupText"></p>
+        <button class="btn btn-success" onclick="openTimer()">Start Timer</button>
+        <button class="btn btn-secondary ms-2" onclick="closePopup()">Cancel</button>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    /* ===== Utils ===== */
+    function formatToMMSS(sec) {
+        sec = parseInt(sec || 0);
+        return String(Math.floor(sec / 60)).padStart(2, "0") + ":" + String(sec % 60).padStart(2, "0");
+    }
+
+    /* ===== Tabs ===== */
+    function showPerformance() { performance_section.style.display = "block"; behavioral_section.style.display = "none"; }
+    function showBehavioral() {
+        performance_section.style.display = "none";
+        behavioral_section.style.display = "block";
+
+        // 🔥 AUTO-render Behavioral Twin graph
+        renderBehavioralTwin();
+    }
+
+
+    /* ===== Subject ===== */
+    function handleSubjectChange() {
+        custom_subject.style.display = dt_subject.value === "Other" ? "block" : "none";
+    }
+
+    /* ===== Popup ===== */
+    function startStudyPopup() {
+        let subject = dt_subject.value === "Other" ? custom_subject.value.trim() : dt_subject.value;
+        if (!subject || !dt_hours.value || !dt_mood.value) { alert("Fill all fields"); return; }
+
+        localStorage.setItem("dt_subject", subject);
+        localStorage.setItem("dt_hours", dt_hours.value);
+        localStorage.setItem("dt_mood", dt_mood.value);
+        localStorage.setItem("timer_subject", subject);
+
+        popupText.innerHTML = `Study <b>${subject}</b> for <b>${dt_hours.value} hr</b>`;
+        studyPopup.style.display = "flex";
+    }
+    function closePopup() { studyPopup.style.display = "none"; }
+    function openTimer() { closePopup(); window.open("/timer", "_blank"); }
+
+    /* ===== Compare ===== */
+    function compareDigitalTwin() {
+        const subject = localStorage.getItem("dt_subject");
+        const hours = parseFloat(localStorage.getItem("dt_hours"));
+        const mood = localStorage.getItem("dt_mood");
+        const sec = parseInt(localStorage.getItem("timerStoppedSeconds") || 0);
+
+        const plannedMin = hours * 60;
+        const actualMin = sec / 60;
+        dt_actual.value = formatToMMSS(sec);
+
+        let progress = Math.min((actualMin / plannedMin) * 100, 100);
+        dt_progress_fill.style.width = progress + "%";
+        dt_progress_fill.style.background = progress >= 80 ? "#22c55e" : progress >= 40 ? "#facc15" : "#ef4444";
+        progress_percent.innerText = progress.toFixed(1) + "%";
+
+        r_subject.innerText = subject;
+        r_mood.innerText = mood;
+        r_planned.innerText = hours + " hr";
+        r_actual.innerText = formatToMMSS(sec);
+        r_status.innerText = progress >= 80 ? "Goal Achieved 🎉" : progress >= 40 ? "Almost There 💪" : "Needs Improvement 📉";
+        r_suggestion.innerText = "Keep improving with consistent sessions.";
+        dt_result.style.display = "block";
+    }
+
+    /* ===== Behavioral Line Chart ===== */
+    let behaviorChart = null;
+
+    function renderBehavioralTwin() {
+
+        const session = JSON.parse(localStorage.getItem("last_session"));
+        if (!session) return;
+
+        const actualHours = (session.actualSeconds / 3600).toFixed(2);
+
+        let color = "#3b82f6";
+        if (session.mood === "Focused" || session.mood === "Motivated") color = "#22c55e";
+        if (session.mood === "Tired") color = "#facc15";
+        if (session.mood === "Stressed") color = "#ef4444";
+
+        if (behaviorChart) behaviorChart.destroy();
+
+        const ctx = document.getElementById("behaviorChart").getContext("2d");
+
+        behaviorChart = new Chart(ctx, {
+            type: "line",
+            data: {
+                labels: ["Planned", "Actual"],
+                datasets: [{
+                    label: `${session.subject} | ${session.mood} | ${session.date}`,
+                    data: [session.plannedHours, actualHours],
+                    borderColor: color,
+                    backgroundColor: color,
+                    tension: 0.4,
+                    pointRadius: 6,
+                    fill: false
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: "Behavioral Twin – Mood Impact on Study Performance"
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: "Study Time (Hours)"
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+
+    /* ===== Restore ===== */
+    window.onload = function () {
+        showPerformance();
+        dt_subject.value = localStorage.getItem("dt_subject") || "";
+        dt_hours.value = localStorage.getItem("dt_hours") || "";
+        dt_mood.value = localStorage.getItem("dt_mood") || "";
+        dt_actual.value = formatToMMSS(localStorage.getItem("timerStoppedSeconds"));
+    };
+</script>
+
+{% endblock %}

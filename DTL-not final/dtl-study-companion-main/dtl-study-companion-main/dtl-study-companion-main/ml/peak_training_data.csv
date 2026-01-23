@@ -1,0 +1,18 @@
+minutes,mood,time_of_day,problem,coping,output
+60,Motivated,Evening,Distraction,Pomodoro,High
+45,Happy,Morning,Concept Difficulty,Revision,High
+30,Tired,Night,Low Motivation,Music,Low
+40,Neutral,Afternoon,Time Pressure,Break,Medium
+50,Motivated,Evening,Distraction,Asked Doubt,High
+35,Stressed,Night,Distraction,Music,Low
+55,Happy,Afternoon,Concept Difficulty,Revision,High
+42,Neutral,Morning,Time Pressure,Pomodoro,Medium
+28,Tired,Night,Low Motivation,Break,Low
+48,Motivated,Evening,Distraction,Pomodoro,High
+60,Motivated,Evening,Distraction,Pomodoro,High
+58,Motivated,Evening,Distraction,Pomodoro,High
+55,Happy,Afternoon,Concept Difficulty,Revision,High
+30,Tired,Night,Low Motivation,Break,Low
+mood,time_of_day,problem,coping,minutes,label
+Happy,Morning,None,Pomodoro,50,2
+Motivated,Evening,None,Music,45,2
